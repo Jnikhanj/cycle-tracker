@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Cycle Tracker</title>
+  <meta name="theme-color" content="#ec4f88" />
+  <style>
+    :root {
+      --bg: #fff6f9;
+      --card: #ffffff;
+      --ink: #261922;
+      --muted: #796a72;
+      --line: #f1c9d8;
+      --primary: #ec4f88;
+      --primary-dark: #c83468;
+      --soft: #ffe2ed;
+      --soft-2: #fff0f5;
+      --green: #dff8ed;
+      --green-line: #a7dfc7;
+      --amber: #fff6df;
+      --red-soft: #ffe3e6;
+      --shadow: 0 18px 40px rgba(236, 79, 136, 0.14);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { margin: 0; min-height: 100%; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: radial-gradient(circle at top left, #ffe1ec 0, #fff6f9 34%, #ffffff 100%);
+      color: var(--ink);
+      padding-bottom: calc(86px + env(safe-area-inset-bottom));
+    }
+
+    header {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 22px 16px 8px;
+    }
+
+    h1 { margin: 0; font-size: 30px; letter-spacing: -0.7px; }
+    h2 { margin: 0 0 12px; font-size: 20px; letter-spacing: -0.3px; }
+    h3 { margin: 14px 0 8px; font-size: 16px; }
+    p { line-height: 1.45; }
+
+    .subtitle { margin-top: 6px; color: var(--muted); font-size: 14px; }
+
+    main { max-width: 760px; margin: 0 auto; padding: 0 16px; }
+
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    .card {
+      background: rgba(255,255,255,0.94);
+      border: 1px solid var(--line);
+      border-radius: 26px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+      margin: 14px 0;
+      overflow: hidden;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #ec4f88, #ff8bb2);
+      border: 0;
+      color: white;
+      padding: 22px;
+    }
+
+    .hero .muted { color: rgba(255,255,255,0.86); }
+    .big { font-size: 46px; font-weight: 850; margin: 6px 0 2px; letter-spacing: -1px; }
+    .muted { color: var(--muted); font-size: 14px; }
+    .small { font-size: 12px; }
+
+    .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+    .stack { display: grid; gap: 10px; }
+
+    @media (max-width: 520px) {
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .big { font-size: 40px; }
+    }
+
+    button {
+      appearance: none;
+      border: 0;
+      border-radius: 17px;
+      padding: 14px 15px;
+      background: var(--primary);
+      color: white;
+      font-weight: 800;
+      font-size: 15px;
+      cursor: pointer;
+      min-height: 48px;
+    }
+
+    button.secondary { background: var(--soft); color: var(--primary-dark); }
+    button.ghost { background: #f8f1f4; color: var(--ink); }
+    button.danger { background: var(--red-soft); color: #a40022; }
+    button:active { transform: translateY(1px); }
+
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: white;
+      color: var(--ink);
+      padding: 13px 14px;
+      font-size: 16px;
+      min-height: 48px;
+    }
+
+    textarea { min-height: 100px; resize: vertical; }
+    label { display: block; margin: 12px 0 6px; font-size: 14px; font-weight: 800; }
+
+    .nav {
+      position: fixed;
+      left: 0; right: 0; bottom: 0;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 4px;
+      padding: 8px 8px calc(10px + env(safe-area-inset-bottom));
+      background: rgba(255,255,255,0.95);
+      border-top: 1px solid var(--line);
+      backdrop-filter: blur(14px);
+      z-index: 20;
+    }
+
+    .nav button {
+      background: transparent;
+      color: var(--muted);
+      border-radius: 14px;
+      font-size: 12px;
+      padding: 8px 4px;
+      min-height: 48px;
+    }
+
+    .nav button.active { background: var(--soft); color: var(--primary-dark); }
+
+    .stat {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--soft-2);
+      padding: 14px;
+    }
+
+    .stat strong { display: block; font-size: 22px; margin-top: 2px; }
+
+    .calendar-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .calendar-top h2 { margin: 0; text-align: center; }
+
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 14px; }
+    .weekday { text-align: center; color: var(--muted); font-size: 12px; font-weight: 800; padding-bottom: 3px; }
+
+    .day {
+      min-height: 52px;
+      border: 1px solid #f4d6e1;
+      border-radius: 15px;
+      background: #fffafd;
+      padding: 6px;
+      font-size: 13px;
+      position: relative;
+    }
+
+    .day.empty { visibility: hidden; }
+    .day.today { outline: 2px solid var(--primary); outline-offset: -2px; }
+    .day.period { background: #ffd5e4; border-color: #ff97bd; }
+    .day.predicted { background: #fff0f6; border-style: dashed; border-color: #e98aad; }
+    .day.fertile { background: var(--green); border-color: var(--green-line); }
+    .day .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--primary); position: absolute; right: 7px; bottom: 7px; }
+
+    .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .pill { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); border-radius: 999px; padding: 8px 10px; background: #fffafd; font-size: 12px; color: var(--muted); }
+    .swatch { width: 12px; height: 12px; border-radius: 50%; border: 1px solid #ddd; }
+    .swatch.period { background: #ffd5e4; border-color: #ff97bd; }
+    .swatch.predicted { background: #fff0f6; border-color: #e98aad; }
+    .swatch.fertile { background: var(--green); border-color: var(--green-line); }
+    .swatch.log { background: var(--primary); border-color: var(--primary); }
+
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fffafd;
+      color: var(--ink);
+      padding: 10px 12px;
+      font-size: 13px;
+      min-height: auto;
+      font-weight: 700;
+    }
+    .chip.selected { background: var(--soft); color: var(--primary-dark); border-color: #ed8bad; }
+
+    .item {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 12px;
+      background: #fffafd;
+      margin: 8px 0;
+    }
+
+    .notice { border-radius: 18px; padding: 14px; font-size: 14px; line-height: 1.45; }
+    .notice.green { background: #f1fff7; border: 1px solid #b8e8cc; color: #225f3e; }
+    .notice.amber { background: var(--amber); border: 1px solid #efd28a; color: #674600; }
+
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Cycle Tracker</h1>
+    <div class="subtitle">Personal, local-only period tracking</div>
+  </header>
+
+  <main>
+    <section id="home" class="screen active">
+      <div class="card hero">
+        <div class="muted">Today</div>
+        <div class="big" id="cycleDay">No cycle yet</div>
+        <div class="muted" id="nextPeriod">Add a period start date to begin.</div>
+      </div>
+
+      <div class="card">
+        <h2>Quick actions</h2>
+        <div class="grid-2">
+          <button onclick="startPeriodToday()">Period started today</button>
+          <button class="secondary" onclick="endPeriodToday()">Period ended today</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>At a glance</h2>
+        <div class="grid-3">
+          <div class="stat"><span class="muted">Average cycle</span><strong id="avgCycle">—</strong></div>
+          <div class="stat"><span class="muted">Average period</span><strong id="avgPeriod">—</strong></div>
+          <div class="stat"><span class="muted">Logs saved</span><strong id="logCount">0</strong></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Privacy</h2>
+        <div class="notice green">Data is saved only in this browser on this device. Nothing is uploaded to GitHub or a server. Export a backup before changing phone or clearing browser data.</div>
+      </div>
+    </section>
+
+    <section id="calendar" class="screen">
+      <div class="card">
+        <div class="calendar-top">
+          <button class="ghost" onclick="changeMonth(-1)">‹</button>
+          <h2 id="monthTitle">Calendar</h2>
+          <button class="ghost" onclick="changeMonth(1)">›</button>
+        </div>
+        <div class="calendar-grid" id="calendarGrid"></div>
+        <div class="legend">
+          <span class="pill"><span class="swatch period"></span> Recorded period</span>
+          <span class="pill"><span class="swatch predicted"></span> Predicted period</span>
+          <span class="pill"><span class="swatch fertile"></span> Estimated fertile window</span>
+          <span class="pill"><span class="swatch log"></span> Daily log</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="log" class="screen">
+      <div class="card">
+        <h2>Daily log</h2>
+        <label for="logDate">Date</label>
+        <input type="date" id="logDate" onchange="loadLogForm()" />
+
+        <label for="flow">Flow</label>
+        <select id="flow">
+          <option value="">None</option>
+          <option>Spotting</option>
+          <option>Light</option>
+          <option>Medium</option>
+          <option>Heavy</option>
+        </select>
+
+        <label for="pain">Pain score: <span id="painText">0</span>/10</label>
+        <input type="range" id="pain" min="0" max="10" value="0" oninput="painText.textContent = this.value" />
+
+        <label for="mood">Mood</label>
+        <select id="mood">
+          <option value="">Not logged</option>
+          <option>Calm</option>
+          <option>Happy</option>
+          <option>Emotional</option>
+          <option>Irritable</option>
+          <option>Anxious</option>
+          <option>Low mood</option>
+        </select>
+
+        <label>Symptoms</label>
+        <div class="chips" id="symptomChips"></div>
+
+        <label for="notes">Notes</label>
+        <textarea id="notes" placeholder="Optional notes"></textarea>
+
+        <button onclick="saveDailyLog()">Save log</button>
+      </div>
+    </section>
+
+    <section id="periods" class="screen">
+      <div class="card">
+        <h2>Record period</h2>
+        <div class="grid-2">
+          <div>
+            <label for="periodStart">Start date</label>
+            <input type="date" id="periodStart" />
+          </div>
+          <div>
+            <label for="periodEnd">End date</label>
+            <input type="date" id="periodEnd" />
+          </div>
+        </div>
+        <p class="muted small">Use this for historical periods or to correct dates. End date can be left blank if the period is still active.</p>
+        <button onclick="addPeriodRange()">Save period</button>
+      </div>
+
+      <div class="card">
+        <h2>Period history</h2>
+        <div id="periodHistory"></div>
+      </div>
+    </section>
+
+    <section id="settings" class="screen">
+      <div class="card">
+        <h2>Settings</h2>
+        <label for="cycleLength">Default cycle length</label>
+        <input type="number" id="cycleLength" min="15" max="60" />
+        <label for="periodLength">Default period length</label>
+        <input type="number" id="periodLength" min="1" max="15" />
+        <label for="lutealLength">Ovulation estimate before next period</label>
+        <input type="number" id="lutealLength" min="10" max="18" />
+        <button onclick="saveSettings()">Save settings</button>
+      </div>
+
+      <div class="card">
+        <h2>Backup</h2>
+        <p class="muted">Export data regularly. Import only your own backup file.</p>
+        <div class="grid-2">
+          <button class="secondary" onclick="exportData()">Export data</button>
+          <button class="ghost" onclick="document.getElementById('importFile').click()">Import data</button>
+        </div>
+        <input class="hidden" id="importFile" type="file" accept="application/json" onchange="importData(event)" />
+      </div>
+
+      <div class="card">
+        <h2>Safety note</h2>
+        <div class="notice amber">This app is for personal tracking only. It does not diagnose medical conditions and should not be used as contraception, fertility treatment advice, or medical advice.</div>
+      </div>
+
+      <div class="card">
+        <h2>Delete</h2>
+        <button class="danger" onclick="deleteAllData()">Delete all data from this browser</button>
+      </div>
+    </section>
+  </main>
+
+  <nav class="nav">
+    <button class="active" onclick="showScreen('home', this)">Home</button>
+    <button onclick="showScreen('calendar', this)">Calendar</button>
+    <button onclick="showLogToday(this)">Log</button>
+    <button onclick="showScreen('periods', this)">Periods</button>
+    <button onclick="showScreen('settings', this)">Settings</button>
+  </nav>
+
+  <script>
+    const KEY = 'cycleTrackerPersonalV1';
+    const symptomList = ['Cramps', 'Headache', 'Bloating', 'Back pain', 'Breast tenderness', 'Acne', 'Fatigue', 'Nausea', 'Cravings', 'Sleep changes', 'Discharge', 'Spotting'];
+
+    let data = loadData();
+    let currentMonth = new Date().getMonth();
+    let currentYear = new Date().getFullYear();
+
+    function defaultData() {
+      return { periods: [], logs: {}, settings: { cycleLength: 28, periodLength: 5, lutealLength: 14 } };
+    }
+
+    function loadData() {
+      try {
+        const raw = localStorage.getItem(KEY);
+        if (!raw) return defaultData();
+        const parsed = JSON.parse(raw);
+        return {
+          periods: Array.isArray(parsed.periods) ? parsed.periods : [],
+          logs: parsed.logs && typeof parsed.logs === 'object' ? parsed.logs : {},
+          settings: { ...defaultData().settings, ...(parsed.settings || {}) }
+        };
+      } catch { return defaultData(); }
+    }
+
+    function persist() {
+      localStorage.setItem(KEY, JSON.stringify(data));
+      renderAll();
+    }
+
+    function todayISO() { return toISO(new Date()); }
+    function parseISO(iso) { const [y,m,d] = iso.split('-').map(Number); return new Date(y, m - 1, d); }
+    function toISO(date) { return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`; }
+    function addDays(date, days) { const d = new Date(date); d.setDate(d.getDate() + days); return d; }
+    function daysBetween(a, b) { return Math.round((parseISO(b) - parseISO(a)) / 86400000); }
+    function formatDate(iso) { return iso ? parseISO(iso).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Not recorded'; }
+    function id() { return `${Date.now()}-${Math.random().toString(16).slice(2)}`; }
+
+    function sortedPeriods() { return [...data.periods].sort((a,b) => a.start.localeCompare(b.start)); }
+    function lastPeriod() { const p = sortedPeriods(); return p[p.length - 1] || null; }
+
+    function averageCycle() {
+      const p = sortedPeriods();
+      if (p.length < 2) return Number(data.settings.cycleLength) || 28;
+      const lengths = [];
+      for (let i = 1; i < p.length; i++) lengths.push(daysBetween(p[i - 1].start, p[i].start));
+      return Math.round(lengths.reduce((a,b) => a + b, 0) / lengths.length);
+    }
+
+    function averagePeriod() {
+      const p = data.periods.filter(x => x.start && x.end && x.end >= x.start);
+      if (!p.length) return Number(data.settings.periodLength) || 5;
+      const lengths = p.map(x => daysBetween(x.start, x.end) + 1);
+      return Math.round(lengths.reduce((a,b) => a + b, 0) / lengths.length);
+    }
+
+    function nextPeriodStart() {
+      const last = lastPeriod();
+      if (!last) return null;
+      return toISO(addDays(parseISO(last.start), averageCycle()));
+    }
+
+    function inRange(iso, start, end) { return iso >= start && iso <= end; }
+
+    function isRecordedPeriod(iso) {
+      return data.periods.some(p => {
+        const end = p.end || todayISO();
+        return p.start && inRange(iso, p.start, end);
+      });
+    }
+
+    function isPredictedPeriod(iso) {
+      const start = nextPeriodStart();
+      if (!start) return false;
+      const end = toISO(addDays(parseISO(start), averagePeriod() - 1));
+      return inRange(iso, start, end);
+    }
+
+    function isFertile(iso) {
+      const next = nextPeriodStart();
+      if (!next) return false;
+      const luteal = Number(data.settings.lutealLength) || 14;
+      const ovulation = addDays(parseISO(next), -luteal);
+      const start = toISO(addDays(ovulation, -5));
+      const end = toISO(addDays(ovulation, 1));
+      return inRange(iso, start, end);
+    }
+
+    function showScreen(name, btn) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(name).classList.add('active');
+      document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      renderAll();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function showLogToday(btn) {
+      showScreen('log', btn);
+      document.getElementById('logDate').value = todayISO();
+      loadLogForm();
+    }
+
+    function startPeriodToday() {
+      const last = lastPeriod();
+      if (last && !last.end) return alert('A period is already active. End it first if needed.');
+      data.periods.push({ id: id(), start: todayISO(), end: '' });
+      persist();
+      alert('Period started for today.');
+    }
+
+    function endPeriodToday() {
+      const last = lastPeriod();
+      if (!last || last.end) return alert('No active period found.');
+      if (todayISO() < last.start) return alert('End date cannot be before start date.');
+      last.end = todayISO();
+      persist();
+      alert('Period ended for today.');
+    }
+
+    function addPeriodRange() {
+      const start = document.getElementById('periodStart').value;
+      const end = document.getElementById('periodEnd').value;
+      if (!start) return alert('Please enter a start date.');
+      if (end && end < start) return alert('End date cannot be before start date.');
+      data.periods.push({ id: id(), start, end });
+      data.periods = sortedPeriods();
+      document.getElementById('periodStart').value = '';
+      document.getElementById('periodEnd').value = '';
+      persist();
+      alert('Period saved.');
+    }
+
+    function deletePeriod(periodId) {
+      if (!confirm('Delete this period entry?')) return;
+      data.periods = data.periods.filter(p => p.id !== periodId);
+      persist();
+    }
+
+    function makeSymptomChips() {
+      const wrap = document.getElementById('symptomChips');
+      wrap.innerHTML = '';
+      symptomList.forEach(symptom => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'chip';
+        b.textContent = symptom;
+        b.onclick = () => b.classList.toggle('selected');
+        wrap.appendChild(b);
+      });
+    }
+
+    function saveDailyLog() {
+      const date = document.getElementById('logDate').value;
+      if (!date) return alert('Please select a date.');
+      const selected = [...document.querySelectorAll('#symptomChips .selected')].map(b => b.textContent);
+      data.logs[date] = {
+        flow: document.getElementById('flow').value,
+        pain: Number(document.getElementById('pain').value),
+        mood: document.getElementById('mood').value,
+        symptoms: selected,
+        notes: document.getElementById('notes').value.trim()
+      };
+      persist();
+      alert('Log saved.');
+    }
+
+    function loadLogForm() {
+      const date = document.getElementById('logDate').value || todayISO();
+      const log = data.logs[date] || { flow: '', pain: 0, mood: '', symptoms: [], notes: '' };
+      document.getElementById('flow').value = log.flow || '';
+      document.getElementById('pain').value = log.pain || 0;
+      document.getElementById('painText').textContent = log.pain || 0;
+      document.getElementById('mood').value = log.mood || '';
+      document.getElementById('notes').value = log.notes || '';
+      document.querySelectorAll('#symptomChips .chip').forEach(b => b.classList.toggle('selected', (log.symptoms || []).includes(b.textContent)));
+    }
+
+    function renderHome() {
+      const last = lastPeriod();
+      document.getElementById('avgCycle').textContent = data.periods.length ? `${averageCycle()} d` : '—';
+      document.getElementById('avgPeriod').textContent = data.periods.length ? `${averagePeriod()} d` : '—';
+      document.getElementById('logCount').textContent = Object.keys(data.logs).length;
+
+      if (!last) {
+        document.getElementById('cycleDay').textContent = 'No cycle yet';
+        document.getElementById('nextPeriod').textContent = 'Add the first day of bleeding to start predictions.';
+        return;
+      }
+
+      const cycleDay = daysBetween(last.start, todayISO()) + 1;
+      document.getElementById('cycleDay').textContent = `Day ${cycleDay}`;
+
+      if (!last.end) {
+        document.getElementById('nextPeriod').textContent = 'Current period is active.';
+        return;
+      }
+
+      const next = nextPeriodStart();
+      const days = daysBetween(todayISO(), next);
+      if (days > 0) document.getElementById('nextPeriod').textContent = `Next period estimated in ${days} day${days === 1 ? '' : 's'} — around ${formatDate(next)}.`;
+      else if (days === 0) document.getElementById('nextPeriod').textContent = 'Next period is estimated to start today.';
+      else document.getElementById('nextPeriod').textContent = `Period is estimated ${Math.abs(days)} day${Math.abs(days) === 1 ? '' : 's'} late.`;
+    }
+
+    function renderCalendar() {
+      const grid = document.getElementById('calendarGrid');
+      grid.innerHTML = '';
+      const d = new Date(currentYear, currentMonth, 1);
+      document.getElementById('monthTitle').textContent = d.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
+      ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(w => {
+        const el = document.createElement('div'); el.className = 'weekday'; el.textContent = w; grid.appendChild(el);
+      });
+      const first = new Date(currentYear, currentMonth, 1).getDay();
+      const total = new Date(currentYear, currentMonth + 1, 0).getDate();
+      for (let i = 0; i < first; i++) { const el = document.createElement('div'); el.className = 'day empty'; grid.appendChild(el); }
+      for (let n = 1; n <= total; n++) {
+        const iso = toISO(new Date(currentYear, currentMonth, n));
+        const el = document.createElement('div');
+        el.className = 'day';
+        el.textContent = n;
+        if (isFertile(iso)) el.classList.add('fertile');
+        if (isPredictedPeriod(iso)) el.classList.add('predicted');
+        if (isRecordedPeriod(iso)) el.classList.add('period');
+        if (iso === todayISO()) el.classList.add('today');
+        if (data.logs[iso]) { const dot = document.createElement('span'); dot.className = 'dot'; el.appendChild(dot); }
+        el.onclick = () => {
+          document.getElementById('logDate').value = iso;
+          document.querySelectorAll('.nav button')[2].click();
+          loadLogForm();
+        };
+        grid.appendChild(el);
+      }
+    }
+
+    function changeMonth(offset) {
+      currentMonth += offset;
+      if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+      if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+      renderCalendar();
+    }
+
+    function renderPeriods() {
+      const list = document.getElementById('periodHistory');
+      const p = sortedPeriods().reverse();
+      if (!p.length) { list.innerHTML = '<p class="muted">No period history yet.</p>'; return; }
+      list.innerHTML = p.map(period => `
+        <div class="item">
+          <strong>${formatDate(period.start)} → ${period.end ? formatDate(period.end) : 'Active / no end date'}</strong><br>
+          <span class="muted">${period.end ? `${daysBetween(period.start, period.end) + 1} day period` : 'Current active period'}</span><br><br>
+          <button class="danger" onclick="deletePeriod('${period.id}')">Delete</button>
+        </div>
+      `).join('');
+    }
+
+    function renderSettings() {
+      document.getElementById('cycleLength').value = data.settings.cycleLength;
+      document.getElementById('periodLength').value = data.settings.periodLength;
+      document.getElementById('lutealLength').value = data.settings.lutealLength;
+    }
+
+    function saveSettings() {
+      const cycle = Number(document.getElementById('cycleLength').value);
+      const period = Number(document.getElementById('periodLength').value);
+      const luteal = Number(document.getElementById('lutealLength').value);
+      if (cycle < 15 || cycle > 60) return alert('Cycle length should be between 15 and 60 days.');
+      if (period < 1 || period > 15) return alert('Period length should be between 1 and 15 days.');
+      if (luteal < 10 || luteal > 18) return alert('Ovulation estimate should be between 10 and 18 days before next period.');
+      data.settings = { cycleLength: cycle, periodLength: period, lutealLength: luteal };
+      persist();
+      alert('Settings saved.');
+    }
+
+    function exportData() {
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `cycle-tracker-backup-${todayISO()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importData(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (!Array.isArray(imported.periods) || !imported.logs || !imported.settings) return alert('Invalid backup file.');
+          data = imported;
+          persist();
+          alert('Backup imported.');
+        } catch { alert('Could not import this file.'); }
+      };
+      reader.readAsText(file);
+    }
+
+    function deleteAllData() {
+      if (!confirm('Delete all app data from this browser? This cannot be undone.')) return;
+      localStorage.removeItem(KEY);
+      data = defaultData();
+      renderAll();
+      alert('All data deleted.');
+    }
+
+    function renderAll() { renderHome(); renderCalendar(); renderPeriods(); renderSettings(); }
+
+    makeSymptomChips();
+    document.getElementById('logDate').value = todayISO();
+    loadLogForm();
+    renderAll();
+  </script>
+</body>
+</html>
